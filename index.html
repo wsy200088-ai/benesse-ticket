@@ -591,7 +591,7 @@ canvas { max-width: 100%; }
       <span class="memo-toggle-icon open" id="memoIcon">▼</span>
     </div>
     <div class="memo-body open" id="memoBody">
-      <textarea class="memo-textarea" id="memoText" placeholder="在此輸入說明、備註或更新紀錄…" oninput="saveMemo()"></textarea>
+      <textarea class="memo-textarea" id="memoText" placeholder="在此輸入說明、備註或更新紀錄…" oninput="saveMemo()" data-memo=""></textarea>
       <div class="memo-footer">
         <span class="memo-saved-hint" id="memoSavedHint">✓ 已自動儲存</span>
         <span style="color:#a16207;" data-zh="輸入即自動儲存｜匯出 HTML 時同步保留" data-ja="入力は自動保存｜HTML出力時も保持">輸入即自動儲存｜匯出 HTML 時同步保留</span>
@@ -614,9 +614,7 @@ canvas { max-width: 100%; }
           <span class="season-tag tag-26sp">2026年春季｜魔法音樂響叮噹</span>
           <span class="season-tag tag-26s" data-zh="2026年夏季｜銀河怪盜的祕密（累積中）" data-ja="2026年夏｜銀河（集計中）">2026年夏季｜銀河怪盜的祕密（累積中）</span>
         </div>
-        <p style="margin-top:10px; font-size:12px; color:#b45309; background:#fffbeb; border-left:3px solid #fcd34d; padding:6px 10px; border-radius:4px; line-height:1.6;"
-           data-zh="⚠ 票房實績資料來源：年代報表，與ERP最終收入約差異 +10～+15萬元。年代報表不包含退票金額。"
-           data-ja="⚠ データ出典：年代チケットシステム。ERP最終収入との差異は約+10～+15万NT$。返券金額は含まれない。">⚠ 票房實績資料來源：年代報表，與ERP最終收入約差異 +10～+15萬元。年代報表不包含退票金額。</p>
+        <p style="margin-top:10px; font-size:12px; color:#b45309; background:#fffbeb; border-left:3px solid #fcd34d; padding:6px 10px; border-radius:4px; line-height:1.6;" data-zh="⚠ 票房實績資料來源：年代報表，與ERP最終收入約差異 +10～+15萬元。年代報表不包含退票金額。" data-ja="⚠ データ出典：年代チケットシステム。ERP最終収入との差異は約+10～+15万NT$。返券金額は含まれない。">⚠ 票房實績資料來源：年代報表，與ERP最終收入約差異 +10～+15萬元。年代報表不包含退票金額。</p>
       </div>
       <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
         <a href="https://ticket.com.tw/application/UTK02/UTK0201_.aspx?PRODUCT_ID=P192ILGJ" target="_blank" rel="noopener" title="銀河怪盜的祕密 — 年代售票系統" style="display: block; border-radius: 10px; overflow: hidden; width: 180px; box-shadow: rgba(0, 0, 0, 0.18) 0px 2px 8px; transition: transform 0.15s; flex-shrink: 0; transform: scale(1);" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
@@ -660,25 +658,25 @@ canvas { max-width: 100%; }
       <div class="multi-check-row" id="kpiSeasonChecks">
     <label class="season-check-label chk-25s checked" onclick="toggleKpiSeason('fy25s')">
       <span class="check-dot"></span>
-      2025年夏季
+      2025年夏季｜精靈的魔法夢境
     </label>
   
     <label class="season-check-label chk-26sp checked" onclick="toggleKpiSeason('fy26sp')">
       <span class="check-dot"></span>
-      2026年春季
+      2026年春季｜魔法音樂響叮噹
     </label>
   
     <label class="season-check-label chk-26s checked" onclick="toggleKpiSeason('fy26s')">
       <span class="check-dot"></span>
-      2026年夏季（累積中）
+      2026年夏季｜銀河怪盜的祕密（累積中）
     </label>
   </div>
       <!-- KPI 橫條圖區（4張卡各一個指標）-->
       <div class="kpi-grid" id="kpiGrid"><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:4px;">總售票張數</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總售票張數</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季</span>
+            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
             <span class="kpi-bar-value">18,346張</span>
           </div>
           <div class="kpi-bar-track">
@@ -686,7 +684,7 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季</span>
+            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季｜魔法音樂響叮噹</span>
             <span class="kpi-bar-value">22,065張</span>
           </div>
           <div class="kpi-bar-track">
@@ -694,18 +692,18 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季</span>
-            <span class="kpi-bar-value">11,484張</span>
+            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季｜銀河怪盜的祕密</span>
+            <span class="kpi-bar-value">9,742張</span>
           </div>
           <div class="kpi-bar-track">
-            <div class="kpi-bar-fill" style="width:52%; background:rgba(34,197,94,0.7); border:1px solid #16a34a;"></div>
+            <div class="kpi-bar-fill" style="width:44%; background:rgba(34,197,94,0.7); border:1px solid #16a34a;"></div>
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:4px;">總票房營業額</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總票房營業額</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季</span>
+            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
             <span class="kpi-bar-value">NT$2050萬</span>
           </div>
           <div class="kpi-bar-track">
@@ -713,7 +711,7 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季</span>
+            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季｜魔法音樂響叮噹</span>
             <span class="kpi-bar-value">NT$2423萬</span>
           </div>
           <div class="kpi-bar-track">
@@ -721,45 +719,45 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季</span>
-            <span class="kpi-bar-value">NT$1378萬</span>
+            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季｜銀河怪盜的祕密</span>
+            <span class="kpi-bar-value">NT$1192萬</span>
           </div>
           <div class="kpi-bar-track">
-            <div class="kpi-bar-fill" style="width:57%; background:rgba(34,197,94,0.7); border:1px solid #16a34a;"></div>
+            <div class="kpi-bar-fill" style="width:49%; background:rgba(34,197,94,0.7); border:1px solid #16a34a;"></div>
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:4px;">平均票價</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">平均票價</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季</span>
+            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
             <span class="kpi-bar-value">NT$1,117</span>
           </div>
           <div class="kpi-bar-track">
-            <div class="kpi-bar-fill" style="width:93%; background:rgba(251,191,36,0.7); border:1px solid #f59e0b;"></div>
+            <div class="kpi-bar-fill" style="width:91%; background:rgba(251,191,36,0.7); border:1px solid #f59e0b;"></div>
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季</span>
+            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季｜魔法音樂響叮噹</span>
             <span class="kpi-bar-value">NT$1,098</span>
           </div>
           <div class="kpi-bar-track">
-            <div class="kpi-bar-fill" style="width:92%; background:rgba(59,130,246,0.7); border:1px solid #3b82f6;"></div>
+            <div class="kpi-bar-fill" style="width:90%; background:rgba(59,130,246,0.7); border:1px solid #3b82f6;"></div>
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季</span>
-            <span class="kpi-bar-value">NT$1,200</span>
+            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季｜銀河怪盜的祕密</span>
+            <span class="kpi-bar-value">NT$1,224</span>
           </div>
           <div class="kpi-bar-track">
             <div class="kpi-bar-fill" style="width:100%; background:rgba(34,197,94,0.7); border:1px solid #16a34a;">▶</div>
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:4px;">巡迴場地數</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">巡迴場地數</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季</span>
+            <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
             <span class="kpi-bar-value">7場</span>
           </div>
           <div class="kpi-bar-track">
@@ -767,7 +765,7 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季</span>
+            <span class="kpi-bar-label" style="color:#3b82f6;">2026年春季｜魔法音樂響叮噹</span>
             <span class="kpi-bar-value">6場</span>
           </div>
           <div class="kpi-bar-track">
@@ -775,7 +773,7 @@ canvas { max-width: 100%; }
           </div>
         </div><div class="kpi-bar-row">
           <div class="kpi-bar-header">
-            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季</span>
+            <span class="kpi-bar-label" style="color:#16a34a;">2026年夏季｜銀河怪盜的祕密</span>
             <span class="kpi-bar-value">7場</span>
           </div>
           <div class="kpi-bar-track">
@@ -787,17 +785,17 @@ canvas { max-width: 100%; }
     <div class="section">
       <div class="alert-row" id="insightRow">
     <div class="alert-item alert-info">
-      📌 2026年夏開賣後第5天累積：<b>3,126張</b>
-      ，同期（25夏） <b>31%</b>
-      ，同期（26春） <b>24%</b>
+      📌 2026年夏開賣後第21天累積：<b>9,275張</b>
+      ，同期（25夏） <b>70%</b>
+      ，同期（26春） <b>60%</b>
     </div>
     <div class="alert-item alert-warn">
-      ⚡ 快閃折扣佔<b>45.6%</b>，
-      原價票僅<b>6.6%</b>
+      ⚡ 快閃折扣佔<b>50.7%</b>，
+      原價票僅<b>5.7%</b>
       ，促銷依賴度持續攀升
     </div>
     <div class="alert-item alert-info">
-      🎁 含提前票<b>8,358</b>張（佔<b>72.8%</b>）
+      🎁 含提前票<b>467</b>張（佔<b>4.8%</b>）
     </div>
   </div>
     </div>
@@ -817,7 +815,7 @@ canvas { max-width: 100%; }
           <input type="radio" name="targetMode" value="all">
           <span data-zh="🌐 含特殊場次合計" data-ja="🌐 特殊公演含む合計">🌐 含特殊場次合計</span>
         </label>
-        <span style="font-size:12px; color:var(--color-muted); margin-left:4px;" id="targetModeNote" data-zh-base="期初目標 8 場地，不含聯電包場、臺東、雲科大" data-ja-base="期初目標 8会場（一括貸切・提携公演を除く）" data-zh-all="含臺南聯電包場、臺東藝術節、雲科大合作場，分子加入實績，分母不變" data-ja-all="臺南一括・臺東提携・雲科大を実績に加算（目標は変更なし）">含臺南聯電包場、臺東藝術節、雲科大合作場，分子加入實績，分母不變</span>
+        <span style="font-size:12px; color:var(--color-muted); margin-left:4px;" id="targetModeNote" data-zh-base="期初目標 8 場地，不含聯電包場、臺東、雲科大" data-ja-base="期初目標 8会場（一括貸切・提携公演を除く）" data-zh-all="含臺南聯電包場、臺東藝術節、雲科大合作場，分子加入實績，分母不變" data-ja-all="臺南一括・臺東提携・雲科大を実績に加算（目標は変更なし）">期初目標 8 場地，不含聯電包場、臺東、雲科大</span>
       </div>
       <div class="card" style="margin-bottom:16px;" id="targetSummaryCard">
     <div style="display:flex; gap:20px; flex-wrap:wrap; align-items:stretch;">
@@ -827,22 +825,22 @@ canvas { max-width: 100%; }
       </div>
       <div style="flex:1; min-width:120px;">
         <div class="kpi-label">現況實績票房</div>
-        <div class="kpi-value" style="font-size:24px; color:var(--color-main-700);">NT$1,708萬</div>
-        <div style="font-size:11px; color:#16a34a; margin-top:2px;">＋特殊場 NT$330萬</div>
+        <div class="kpi-value" style="font-size:24px; color:var(--color-main-700);">NT$1,378萬</div>
+        
       </div>
       <div style="flex:1; min-width:120px;">
-        <div class="kpi-label">整體達成率（含特殊場次）</div>
-        <div class="kpi-value" style="font-size:28px; color:#ca8a04;">79.0%</div>
+        <div class="kpi-label">達成率（期初目標場次）</div>
+        <div class="kpi-value" style="font-size:28px; color:#ca8a04;">63.8%</div>
       </div>
       <div style="flex:1; min-width:120px;">
         <div class="kpi-label">缺口金額</div>
-        <div class="kpi-value" style="font-size:24px; color:#dc2626;">NT$453萬</div>
+        <div class="kpi-value" style="font-size:24px; color:#dc2626;">NT$783萬</div>
       </div>
     </div>
   </div>
       <div class="card">
         <div class="card-title" data-zh="各場地達成率" data-ja="会場別達成率">各場地達成率</div>
-        <div class="chart-wrap"><canvas id="targetChart" height="251" style="box-sizing: border-box; display: block; height: 251px; width: 836px;" width="836"></canvas></div>
+        <div class="chart-wrap"><canvas id="targetChart" height="330" style="box-sizing: border-box; display: block; height: 330px; width: 1099px;" width="1099"></canvas></div>
       </div>
       <div class="card mt-16">
         <div class="card-title" data-zh="場地達成明細" data-ja="会場別達成明細">場地達成明細</div>
@@ -955,8 +953,8 @@ canvas { max-width: 100%; }
   <!-- ===== TAB: VELOCITY ===== -->
   <div id="tab-velocity" class="tab-panel">
     <div class="section">
-      <h2 class="card-title" data-zh="開賣後累積票房曲線（三回疊圖）" data-ja="販売開始後 累積興行収入推移（3公演重ね）">開賣後累積售票曲線（三季疊圖）</h2>
-      <p style="font-size:13px; color:var(--color-muted); margin-bottom:16px;" data-zh="X軸為「開賣後第N天」，各回時間軸對齊比較。Y軸為累積票房金額（NT$）。不含首日前提前票。" data-ja="X軸は「販売開始後N日目」。Y軸は累積興行収入（NT$）。各公演の販売開始日を揃えて比較。">X軸為「開賣後第N天」，各季時間軸對齊比較。不含首日前提前票。</p>
+      <h2 class="card-title" data-zh="開賣後累積票房曲線（三回疊圖）" data-ja="販売開始後 累積興行収入推移（3公演重ね）">開賣後累積票房曲線（三回疊圖）</h2>
+      <p style="font-size:13px; color:var(--color-muted); margin-bottom:16px;" data-zh="X軸為「開賣後第N天」，各回時間軸對齊比較。Y軸為累積票房金額（NT$）。不含首日前提前票。" data-ja="X軸は「販売開始後N日目」。Y軸は累積興行収入（NT$）。各公演の販売開始日を揃えて比較。">X軸為「開賣後第N天」，各回時間軸對齊比較。Y軸為累積票房金額（NT$）。不含首日前提前票。</p>
       <div class="alert-row" id="velocityInsights">
     <div class="alert-item alert-info">
       🚀 開賣首日張數：
@@ -2222,7 +2220,15 @@ function exportHTML() {
   const memoEl = document.getElementById('memoText');
   const memoVal = memoEl ? memoEl.value : '';
   let clone = document.documentElement.outerHTML;
-  // 注入 memo 內容到匯出的 HTML（在 </body> 前）
+  // 注入 memo 內容到匯出的 HTML（在 <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.getElementById('memoText');
+      if(el) {
+        var saved = decodeURIComponent(el.dataset.memo || '');
+        if(saved) { el.value = saved; if(typeof updateMemoPreview==='function') updateMemoPreview(); }
+      }
+    });
+  </script></body> 前）
   const memoScript = '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.getElementById("memoText");if(el&&!el.value)el.value=' + JSON.stringify('__MEMO__') + '.replace("__MEMO__",decodeURIComponent(el.dataset.memo||""));});<\/script>';
   // 直接在 textarea 加 data-memo attribute 儲存內容
   const encoded = encodeURIComponent(memoVal);
