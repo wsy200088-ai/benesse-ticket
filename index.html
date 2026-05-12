@@ -673,7 +673,7 @@ canvas { max-width: 100%; }
   </div>
       <!-- KPI 橫條圖區（4張卡各一個指標）-->
       <div class="kpi-grid" id="kpiGrid"><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總售票張數</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:1.5em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總售票張數</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
             <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
@@ -700,7 +700,7 @@ canvas { max-width: 100%; }
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總票房營業額</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:1.5em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">總票房營業額</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
             <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
@@ -727,7 +727,7 @@ canvas { max-width: 100%; }
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">平均票價</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:1.5em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">平均票價</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
             <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
@@ -754,7 +754,7 @@ canvas { max-width: 100%; }
           </div>
         </div>
     </div><div class="card kpi-bar-card">
-      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">巡迴場地數</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:1.5em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">巡迴場地數</div>
       <div class="kpi-bar-row">
           <div class="kpi-bar-header">
             <span class="kpi-bar-label" style="color:#f59e0b;">2025年夏季｜精靈的魔法夢境</span>
@@ -1418,7 +1418,7 @@ function renderOverview() {
     const card = document.createElement('div');
     card.className = 'card kpi-bar-card';
     card.innerHTML = `
-      <div class="kpi-label" style="margin-bottom:6px; font-size:2em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">${t(kpi.zh,kpi.ja)}</div>
+      <div class="kpi-label" style="margin-bottom:6px; font-size:1.5em; font-weight:800; color:#0c1a2e; letter-spacing:-0.01em;">${t(kpi.zh,kpi.ja)}</div>
       ${seasons.map((s,i) => {
         const val = s.data.kpi[kpi.key];
         const pctW = Math.round(val/maxVal*100);
@@ -2220,29 +2220,30 @@ function exportHTML() {
   const memoEl = document.getElementById('memoText');
   const memoVal = memoEl ? memoEl.value : '';
   let clone = document.documentElement.outerHTML;
-  // 注入 memo 內容到匯出的 HTML（在 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var el = document.getElementById('memoText');
-      if(el) {
-        var saved = decodeURIComponent(el.dataset.memo || '');
-        if(saved) { el.value = saved; if(typeof updateMemoPreview==='function') updateMemoPreview(); }
-      }
-    });
-  </script></body> 前）
-  const memoScript = '<script>document.addEventListener("DOMContentLoaded",function(){var el=document.getElementById("memoText");if(el&&!el.value)el.value=' + JSON.stringify('__MEMO__') + '.replace("__MEMO__",decodeURIComponent(el.dataset.memo||""));});<\/script>';
-  // 直接在 textarea 加 data-memo attribute 儲存內容
+
+  // 1. 把當下最新的 fy26sData 序列化，替換 clone 裡的 RAW_DATA.fy26s
+  //    這樣匯出的 HTML 開啟後，所有 tab 都顯示最新資料
+  try {
+    const freshFy26s = JSON.stringify(fy26sData);
+    // 找到 "fy26s": { ... } 的位置並替換（從 "fy26s": 到最後的 }]}} 前）
+    clone = clone.replace(
+      /"fy26s":\s*\{[\s\S]*?\}\s*\}\s*\};/,
+      '"fy26s": ' + freshFy26s + '};'
+    );
+  } catch(e) {
+    console.warn('fy26sData 序列化失敗:', e);
+  }
+
+  // 2. 清除上次匯出時注入的殘留 script
+  clone = clone.replace(/<script id="memo-inject">[\s\S]*?<\/script>/g, '');
+
+  // 3. memo 內容存入 data-memo attribute
   const encoded = encodeURIComponent(memoVal);
-  clone = clone.replace(/<textarea([^>]*id="memoText"[^>]*)>/, '<textarea$1 data-memo="' + encoded + '">');
-  const injectScript = `<script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var el = document.getElementById('memoText');
-      if(el) {
-        var saved = decodeURIComponent(el.dataset.memo || '');
-        if(saved) { el.value = saved; if(typeof updateMemoPreview==='function') updateMemoPreview(); }
-      }
-    });
-  <\/script>`;
-  clone = clone.replace('</body>', injectScript + '</body>');
+  clone = clone.replace(
+    /(<textarea[^>]*id="memoText"[^>]*?)( data-memo="[^"]*")?>/,
+    '$1 data-memo="' + encoded + '">'
+  );
+
   const blob = new Blob([clone], {type:'text/html;charset=utf-8'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -2311,11 +2312,15 @@ function saveMemo() {
 
 function loadMemo() {
   try {
-    const saved = localStorage.getItem('benesse_ticket_memo');
-    if(saved) {
-      document.getElementById('memoText').value = saved;
-      updateMemoPreview();
+    // 優先從 data-memo attribute 讀取（匯出的靜態 HTML）
+    const el = document.getElementById('memoText');
+    if(el && el.dataset.memo) {
+      const fromAttr = decodeURIComponent(el.dataset.memo);
+      if(fromAttr) { el.value = fromAttr; updateMemoPreview(); return; }
     }
+    // 否則從 localStorage 讀取（線上版本）
+    const saved = localStorage.getItem('benesse_ticket_memo');
+    if(saved) { el.value = saved; updateMemoPreview(); }
   } catch(e) {}
 }
 
