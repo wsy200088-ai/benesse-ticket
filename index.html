@@ -1507,15 +1507,11 @@ function renderTarget() {
   });
   
   // For target rows, match actual from venueMap (simple)
-  // showByMonth key = 場地|月份，臺北6月/8月用 venueTag 區分
+  // 臺北 6月場次 = 2026/06/xx, 8月 = 2026/08/xx
   const showByMonth = {};
   (data.showDetail||[]).forEach(s => {
-    const m = s.showTime.includes('/06/') ? '6月'
-            : s.showTime.includes('/07/') ? '7月'
-            : s.showTime.includes('/08/') ? '8月'
-            : s.showTime.includes('/09/') ? '9月'
-            : s.showTime.includes('/10/') ? '10月' : '其他';
-    const k = s.venue + '|' + m;
+    const m = s.showTime.includes('/06/') ? '6月' : s.showTime.includes('/07/') ? '7月' : s.showTime.includes('/08/') ? '8月' : '9月+';
+    const k = s.venue+'|'+m;
     if(!showByMonth[k]) showByMonth[k] = {tickets:0, revenue:0};
     showByMonth[k].tickets += s.tickets;
     showByMonth[k].revenue += s.revenue;
@@ -1523,8 +1519,7 @@ function renderTarget() {
 
   const targets = data.targets || [];
   const rows = targets.map(tgt => {
-    // 臺北親子劇場同時有6月和8月目標，用月份區分 key
-    const k = tgt.venue + '|' + tgt.month;
+    const k = (tgt.venueTag ? tgt.venue : tgt.venue) +'|'+ tgt.month;
     const actual = showByMonth[k] || {tickets:0, revenue:0};
     const achRate = tgt.targetRev > 0 ? actual.revenue / tgt.targetRev : null;
     return { ...tgt, actualTickets: actual.tickets, actualRev: actual.revenue, achRate };
@@ -1609,35 +1604,36 @@ function renderTarget() {
       indexAxis:'y',
       plugins:{
         legend:{ position:'top' },
-        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } }
+        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } },
+        customDiffLabel: {}
       },
       scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/10000)+'萬' } } }
     },
     plugins:[{
-      id: 'diffLabel',
-      afterDraw(chart) {
-        try {
-          const ctx2 = chart.ctx;
-          const ds0 = chart.data.datasets[0];
-          const ds1 = chart.data.datasets[1];
-          if(!ds0||!ds1) return;
-          const meta1 = chart.getDatasetMeta(1);
-          if(!meta1||!meta1.data) return;
-          ctx2.save();
-          ctx2.font = 'bold 10px sans-serif';
-          ctx2.textAlign = 'left';
-          ctx2.textBaseline = 'middle';
-          meta1.data.forEach((bar, i) => {
-            const targetVal = ds0.data[i] || 0;
-            const actualVal = ds1.data[i] || 0;
-            if(targetVal === 0) return;
-            const diff = actualVal - targetVal;
-            const label = (diff >= 0 ? '+' : '') + Math.round(diff/10000) + '萬';
-            ctx2.fillStyle = diff >= 0 ? '#16a34a' : '#dc2626';
-            ctx2.fillText(label, bar.x + 4, bar.y);
-          });
-          ctx2.restore();
-        } catch(e) {}
+      id:'customDiffLabel',
+      afterDatasetsDraw(chart) {
+        const ctx2 = chart.ctx;
+        const meta0 = chart.getDatasetMeta(0); // 目標
+        const meta1 = chart.getDatasetMeta(1); // 實績
+        if(!meta1.visible) return;
+        ctx2.save();
+        ctx2.font = 'bold 10px Inter, sans-serif';
+        ctx2.textAlign = 'left';
+        ctx2.textBaseline = 'middle';
+        meta1.data.forEach((bar, i) => {
+          const targetVal = chart.data.datasets[0].data[i] || 0;
+          const actualVal = chart.data.datasets[1].data[i] || 0;
+          if(targetVal === 0) return;
+          const diff = actualVal - targetVal;
+          const diffWan = Math.round(diff/10000);
+          const label = (diff >= 0 ? '+' : '') + diffWan + '萬';
+          const color = diff >= 0 ? '#16a34a' : '#dc2626';
+          const x = bar.x + 4;
+          const y = bar.y;
+          ctx2.fillStyle = color;
+          ctx2.fillText(label, x, y);
+        });
+        ctx2.restore();
       }
     }]
   });
@@ -2225,125 +2221,20 @@ function exportHTML() {
   const memoVal = memoEl ? memoEl.value : '';
   let clone = document.documentElement.outerHTML;
 
-  // 1. 把當下最新的 fy26sData 序列化，替換 RAW_DATA.fy26s
+  // 1. 把當下最新的 fy26sData 序列化，替換 clone 裡的 RAW_DATA.fy26s
+  //    這樣匯出的 HTML 開啟後，所有 tab 都顯示最新資料
   try {
     const freshFy26s = JSON.stringify(fy26sData);
+    // 找到 "fy26s": { ... } 的位置並替換（從 "fy26s": 到最後的 }]}} 前）
     clone = clone.replace(
       /"fy26s":\s*\{[\s\S]*?\}\s*\}\s*\};/,
       '"fy26s": ' + freshFy26s + '};'
     );
-  } catch(e) { console.warn('fy26sData 序列化失敗:', e); }
-
-  // 2. 清除殘留 script
-  clone = clone.replace(/<script id="memo-inject">[\s\S]*?<\/script>/g, '');
-
-  // 3. memo 存入 data-memo attribute
-  const encoded = encodeURIComponent(memoVal);
-  clone = clone.replace(
-    /(<textarea[^>]*id="memoText"[^>]*?)( data-memo="[^"]*")?>/,
-    '$1 data-memo="' + encoded + '">'
-  );
-
-  const blob = new Blob([clone], {type:'text/html;charset=utf-8'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'ticket_dashboard_' + new Date().toISOString().substring(0,10) + '.html';
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-
-// ============================================================
-// RENDER ALL
-// ============================================================
-function renderAll() {
-  const active = document.querySelector('.tab-panel.active')?.id?.replace('tab-','');
-  if(active==='overview') { renderKpiChecks(); renderOverview(); }
-  else if(active==='target') renderTarget();
-  else if(active==='velocity') renderVelocity();
-  else if(active==='venue') renderVenue();
-  else if(active==='ticket') renderTicketMix();
-  else if(active==='show') renderShowDetail(currentShowSeason);
-  
-  // Update target mode note
-  const note = document.getElementById('targetModeNote');
-  if(note) {
-    const zhKey = currentTargetMode==='base' ? 'data-zh-base' : 'data-zh-all';
-    const jaKey = currentTargetMode==='base' ? 'data-ja-base' : 'data-ja-all';
-    note.textContent = currentLang==='zh' ? note.getAttribute(zhKey) : note.getAttribute(jaKey);
+  } catch(e) {
+    console.warn('fy26sData 序列化失敗:', e);
   }
-  // Update all data-zh/ja elements
-  document.querySelectorAll('[data-zh]').forEach(el => {
-    el.textContent = currentLang==='zh' ? el.dataset.zh : (el.dataset.ja || el.dataset.zh);
-  });
-  // Memo placeholder
-  const memoTa = document.getElementById('memoText');
-  if(memoTa) memoTa.placeholder = currentLang==='zh' ? '在此輸入說明、備註或更新紀錄…' : 'メモ・更新履歴などを入力…';
-  // Tab buttons
-  const tabLabels = [
-    [t('📊 總覽 KPI','📊 KPI概要'),t('🎯 目標達成（2026年夏）','🎯 目標達成（2026年夏）'),t('📈 開賣速度趨勢','📈 販売速度トレンド'),
-     t('🏛 場地比較','🏛 会場比較'),t('🎟 票種結構','🎟 券種構成'),t('📋 場次明細','📋 公演明細')]
-  ][0];
-  document.querySelectorAll('.tab-btn').forEach((btn,i)=>{ btn.textContent = tabLabels[i]; });
-}
 
-// ============================================================
-// MEMO（記錄說明）
-// ============================================================
-function toggleMemo() {
-  const body = document.getElementById('memoBody');
-  const icon = document.getElementById('memoIcon');
-  const isOpen = body.classList.toggle('open');
-  icon.classList.toggle('open', isOpen);
-  updateMemoPreview();
-}
-
-function saveMemo() {
-  const text = document.getElementById('memoText').value;
-  try { localStorage.setItem('benesse_ticket_memo', text); } catch(e) {}
-  // 顯示已儲存提示
-  const hint = document.getElementById('memoSavedHint');
-  hint.classList.add('show');
-  clearTimeout(saveMemo._timer);
-  saveMemo._timer = setTimeout(() => hint.classList.remove('show'), 1500);
-  updateMemoPreview();
-}
-
-function loadMemo() {
-  try {
-    // 優先從 data-memo attribute 讀取（匯出的靜態 HTML）
-    const el = document.getElementById('memoText');
-    if(el && el.dataset.memo) {
-      const fromAttr = decodeURIComponent(el.dataset.memo);
-      if(fromAttr) { el.value = fromAttr; updateMemoPreview(); return; }
-    }
-    // 否則從 localStorage 讀取（線上版本）
-    const saved = localStorage.getItem('benesse_ticket_memo');
-    if(saved) { el.value = saved; updateMemoPreview(); }
-  } catch(e) {}
-}
-
-function updateMemoPreview() {
-  const text = document.getElementById('memoText').value;
-  const preview = document.getElementById('memoPreview');
-  const body = document.getElementById('memoBody');
-  if(!body.classList.contains('open') && text.trim()) {
-    const short = text.trim().replace(/\n/g,' ').substring(0, 40);
-    preview.textContent = '— ' + short + (text.trim().length > 40 ? '…' : '');
-  } else {
-    preview.textContent = '';
-  }
-}
-
-// ============================================================
-// INIT
-// ============================================================
-document.addEventListener('DOMContentLoaded', () => {
-  loadMemo();
-  renderAll();
-  renderOverview();
-});
-</script>
+  // 2. 清除上次匯出時注入的殘留 script
+  clone = clone.replace(/
 
 </body></html>
