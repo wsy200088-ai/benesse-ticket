@@ -1507,11 +1507,15 @@ function renderTarget() {
   });
   
   // For target rows, match actual from venueMap (simple)
-  // 臺北 6月場次 = 2026/06/xx, 8月 = 2026/08/xx
+  // showByMonth key = 場地|月份，臺北6月/8月用 venueTag 區分
   const showByMonth = {};
   (data.showDetail||[]).forEach(s => {
-    const m = s.showTime.includes('/06/') ? '6月' : s.showTime.includes('/07/') ? '7月' : s.showTime.includes('/08/') ? '8月' : '9月+';
-    const k = s.venue+'|'+m;
+    const m = s.showTime.includes('/06/') ? '6月'
+            : s.showTime.includes('/07/') ? '7月'
+            : s.showTime.includes('/08/') ? '8月'
+            : s.showTime.includes('/09/') ? '9月'
+            : s.showTime.includes('/10/') ? '10月' : '其他';
+    const k = s.venue + '|' + m;
     if(!showByMonth[k]) showByMonth[k] = {tickets:0, revenue:0};
     showByMonth[k].tickets += s.tickets;
     showByMonth[k].revenue += s.revenue;
@@ -1519,7 +1523,8 @@ function renderTarget() {
 
   const targets = data.targets || [];
   const rows = targets.map(tgt => {
-    const k = (tgt.venueTag ? tgt.venue : tgt.venue) +'|'+ tgt.month;
+    // 臺北親子劇場同時有6月和8月目標，用月份區分 key
+    const k = tgt.venue + '|' + tgt.month;
     const actual = showByMonth[k] || {tickets:0, revenue:0};
     const achRate = tgt.targetRev > 0 ? actual.revenue / tgt.targetRev : null;
     return { ...tgt, actualTickets: actual.tickets, actualRev: actual.revenue, achRate };
@@ -1604,36 +1609,35 @@ function renderTarget() {
       indexAxis:'y',
       plugins:{
         legend:{ position:'top' },
-        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } },
-        customDiffLabel: {}
+        tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } }
       },
       scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/10000)+'萬' } } }
     },
     plugins:[{
-      id:'customDiffLabel',
-      afterDatasetsDraw(chart) {
-        const ctx2 = chart.ctx;
-        const meta0 = chart.getDatasetMeta(0); // 目標
-        const meta1 = chart.getDatasetMeta(1); // 實績
-        if(!meta1.visible) return;
-        ctx2.save();
-        ctx2.font = 'bold 10px Inter, sans-serif';
-        ctx2.textAlign = 'left';
-        ctx2.textBaseline = 'middle';
-        meta1.data.forEach((bar, i) => {
-          const targetVal = chart.data.datasets[0].data[i] || 0;
-          const actualVal = chart.data.datasets[1].data[i] || 0;
-          if(targetVal === 0) return;
-          const diff = actualVal - targetVal;
-          const diffWan = Math.round(diff/10000);
-          const label = (diff >= 0 ? '+' : '') + diffWan + '萬';
-          const color = diff >= 0 ? '#16a34a' : '#dc2626';
-          const x = bar.x + 4;
-          const y = bar.y;
-          ctx2.fillStyle = color;
-          ctx2.fillText(label, x, y);
-        });
-        ctx2.restore();
+      id: 'diffLabel',
+      afterDraw(chart) {
+        try {
+          const ctx2 = chart.ctx;
+          const ds0 = chart.data.datasets[0];
+          const ds1 = chart.data.datasets[1];
+          if(!ds0||!ds1) return;
+          const meta1 = chart.getDatasetMeta(1);
+          if(!meta1||!meta1.data) return;
+          ctx2.save();
+          ctx2.font = 'bold 10px sans-serif';
+          ctx2.textAlign = 'left';
+          ctx2.textBaseline = 'middle';
+          meta1.data.forEach((bar, i) => {
+            const targetVal = ds0.data[i] || 0;
+            const actualVal = ds1.data[i] || 0;
+            if(targetVal === 0) return;
+            const diff = actualVal - targetVal;
+            const label = (diff >= 0 ? '+' : '') + Math.round(diff/10000) + '萬';
+            ctx2.fillStyle = diff >= 0 ? '#16a34a' : '#dc2626';
+            ctx2.fillText(label, bar.x + 4, bar.y);
+          });
+          ctx2.restore();
+        } catch(e) {}
       }
     }]
   });
@@ -2221,23 +2225,19 @@ function exportHTML() {
   const memoVal = memoEl ? memoEl.value : '';
   let clone = document.documentElement.outerHTML;
 
-  // 1. 把當下最新的 fy26sData 序列化，替換 clone 裡的 RAW_DATA.fy26s
-  //    這樣匯出的 HTML 開啟後，所有 tab 都顯示最新資料
+  // 1. 把當下最新的 fy26sData 序列化，替換 RAW_DATA.fy26s
   try {
     const freshFy26s = JSON.stringify(fy26sData);
-    // 找到 "fy26s": { ... } 的位置並替換（從 "fy26s": 到最後的 }]}} 前）
     clone = clone.replace(
       /"fy26s":\s*\{[\s\S]*?\}\s*\}\s*\};/,
       '"fy26s": ' + freshFy26s + '};'
     );
-  } catch(e) {
-    console.warn('fy26sData 序列化失敗:', e);
-  }
+  } catch(e) { console.warn('fy26sData 序列化失敗:', e); }
 
-  // 2. 清除上次匯出時注入的殘留 script
+  // 2. 清除殘留 script
   clone = clone.replace(/<script id="memo-inject">[\s\S]*?<\/script>/g, '');
 
-  // 3. memo 內容存入 data-memo attribute
+  // 3. memo 存入 data-memo attribute
   const encoded = encodeURIComponent(memoVal);
   clone = clone.replace(
     /(<textarea[^>]*id="memoText"[^>]*?)( data-memo="[^"]*")?>/,
