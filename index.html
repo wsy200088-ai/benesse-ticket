@@ -2371,7 +2371,31 @@ function exportHTML() {
     }
   } catch(e) { console.warn('fy26sData 替換失敗:', e); }
 
-  // 2. 清除殘留 script
-  clone = clone.replace(/
+  // 2. 匯出下載
+  const blob = new Blob([clone], {type: 'text/html; charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'benesse-ticket-dashboard.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 100);
+}
 
+// ============================================================
+// RENDER ALL (re-render current active tab)
+// ============================================================
+function renderAll() {
+  const tabs = ['overview','target','velocity','venue','ticket','show'];
+  const active = tabs.find(n => document.getElementById('tab-'+n) && document.getElementById('tab-'+n).classList.contains('active')) || 'target';
+  switchTab(active);
+}
+
+// ============================================================
+// INIT ON PAGE LOAD
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  switchTab('target');
+});
+</script>
 </body></html>
