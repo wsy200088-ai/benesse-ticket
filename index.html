@@ -2390,6 +2390,17 @@ function renderAll() {
   const tabs = ['overview','target','velocity','venue','ticket','show'];
   const active = tabs.find(n => document.getElementById('tab-'+n) && document.getElementById('tab-'+n).classList.contains('active')) || 'target';
   switchTab(active);
+  updateDataDateDisplay();
+}
+
+// ============================================================
+// DATA DATE DISPLAY (永遠顯示 fy26sData.dataDate，隨資料更新自動同步)
+// ============================================================
+function updateDataDateDisplay() {
+  const el = document.getElementById('dataDateDisplay');
+  if (el && fy26sData && fy26sData.dataDate) {
+    el.textContent = fy26sData.dataDate;
+  }
 }
 
 // ============================================================
@@ -2397,6 +2408,7 @@ function renderAll() {
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
   switchTab('target');
+  updateDataDateDisplay();
 });
 </script>
 </body></html>
