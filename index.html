@@ -1620,14 +1620,24 @@ function renderTarget() {
     const achRate = tgt.targetRev > 0 ? actual.revenue / tgt.targetRev : null;
     return { ...tgt, actualTickets: actual.tickets, actualRev: actual.revenue, achRate };
   });
-  
+  // 有期初目標的特殊場次（聯電包場）納入正式目標列
+  (data.special||[]).filter(sp => (sp.targetRev||0) > 0).forEach(sp => {
+    rows.push({
+      month: sp.month||'—', venue: sp.venue,
+      venueTag: t(sp.note, sp.noteJa),
+      targetQty: sp.targetQty||0, targetRev: sp.targetRev||0,
+      actualTickets: sp.tickets, actualRev: sp.revenue,
+      achRate: sp.revenue / sp.targetRev
+    });
+  });
+
   const baseTargetRev = rows.reduce((s,r)=>s+r.targetRev,0);
   const baseActualRev = rows.reduce((s,r)=>s+r.actualRev,0);
 
-  // 特殊場次實績與目標（只有聯電包場有期初目標，臺東/雲科大無目標）
-  const specialRev       = (data.special||[]).reduce((s,x)=>s+x.revenue,0);
-  const specialTargetRev = (data.special||[]).reduce((s,x)=>s+(x.targetRev||0),0);
-  const specialTickets   = (data.special||[]).reduce((s,x)=>s+x.tickets,0);
+  // 特殊場次（無期初目標者：臺東/雲科大），有目標者已納入 rows
+  const specialRev     = (data.special||[]).filter(x=>!(x.targetRev>0)).reduce((s,x)=>s+x.revenue,0);
+  const specialTargetRev = 0;
+  const specialTickets = (data.special||[]).filter(x=>!(x.targetRev>0)).reduce((s,x)=>s+x.tickets,0);
 
   const isAll = currentTargetMode === 'all';
   const totalTargetRev = isAll ? baseTargetRev + specialTargetRev : baseTargetRev;
@@ -1663,13 +1673,13 @@ function renderTarget() {
   // 圖表資料：base模式只顯示8場地；all模式額外加3特殊場
   let chartRows = [...rows];
   if(isAll) {
-    (data.special||[]).forEach(sp => {
+    // 只加入無期初目標的特殊場次（臺東、雲科大）；聯電包場已在 rows 內
+    (data.special||[]).filter(sp => !(sp.targetRev > 0)).forEach(sp => {
       chartRows.push({
         venue: sp.venue, month:'特殊',
-        targetQty: sp.targetQty||0, targetRev: sp.targetRev||0,
+        targetQty: 0, targetRev: 0,
         actualTickets: sp.tickets, actualRev: sp.revenue,
-        achRate: (sp.targetRev>0 && sp.revenue>0) ? sp.revenue/sp.targetRev : null,
-        isSpecial: true
+        achRate: null, isSpecial: true
       });
     });
   }
@@ -1740,7 +1750,7 @@ function renderTarget() {
   // 計算所有場地(含特殊場次)的最高單價，作為橫條圖滿格基準
   const allAvgPrices = [
     ...rows.filter(r=>r.actualTickets>0).map(r=>Math.round(r.actualRev/r.actualTickets)),
-    ...(data.special||[]).filter(s=>s.tickets>0).map(s=>Math.round(s.revenue/s.tickets))
+    ...(data.special||[]).filter(s=>s.tickets>0 && !(s.targetRev>0)).map(s=>Math.round(s.revenue/s.tickets))
   ];
   const maxAvgPrice = allAvgPrices.length > 0 ? Math.max(...allAvgPrices) : 1;
 
@@ -1786,7 +1796,7 @@ function renderTarget() {
     <th class="text-right">${t('票房','収入')}</th>
     <th>${t('實績平均單價','実績平均単価')}</th>
   </tr></thead><tbody>
-  ${(data.special||[]).map(s=>{
+  ${(data.special||[]).filter(s => !(s.targetRev > 0)).map(s=>{
     const avgP = s.tickets > 0 ? Math.round(s.revenue / s.tickets) : 0;
     const barW = maxAvgPrice > 0 ? Math.round(avgP / maxAvgPrice * 100) : 0;
     const barColor = avgP >= 1200 ? '#16a34a' : avgP >= 900 ? '#0284c7' : '#f59e0b';
