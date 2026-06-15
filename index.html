@@ -1398,16 +1398,12 @@ canvas { max-width: 100%; }
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
           <div class="card-title" style="margin:0;">商品銷售分析</div>
           <div id="merch-view-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button onclick="switchMerchView('byShow')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以場次</button>
+            <button onclick="switchMerchView('byShow')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">商品×場次</button>
             <button onclick="switchMerchView('byName')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以商品名稱</button>
             <button onclick="switchMerchView('byRevenue')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以金額高低</button>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="merch-product-chart" height="400"></canvas></div>
-      </div>
-      <div class="card" style="max-width:520px;">
-        <div class="card-title">繪本 vs 周邊商品</div>
-        <div class="chart-wrap"><canvas id="merch-category-donut" height="220"></canvas></div>
       </div>
     </div>
   </div>
@@ -2503,10 +2499,11 @@ function updateDataDateDisplay() {
 // ============================================================
 let currentMerchView = 'byShow';
 
+const MERCH_SHOW_COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16'];
+
 function renderMerch() {
   if(charts['merch-show']) { charts['merch-show'].destroy(); delete charts['merch-show']; }
   if(charts['merch-product']) { charts['merch-product'].destroy(); delete charts['merch-product']; }
-  if(charts['merch-donut']) { charts['merch-donut'].destroy(); delete charts['merch-donut']; }
 
   const d = MERCH_DATA;
   const shows = d.shows;
@@ -2523,7 +2520,7 @@ function renderMerch() {
   const completedTarget = completedShows.reduce((s, sh) => s + sh.target, 0);
   const completedAch = completedTarget > 0 ? completedActual / completedTarget : 0;
 
-  const prodTotals = products.map((p, i) => ({ name: p.name, totalRev: p.showRevs.reduce((s, r) => s + r, 0), i }));
+  const prodTotals = products.map(p => ({ name: p.name, totalRev: p.showRevs.reduce((s, r) => s + r, 0) }));
   prodTotals.sort((a, b) => b.totalRev - a.totalRev);
   const topProduct = prodTotals[0];
 
@@ -2560,10 +2557,32 @@ function renderMerch() {
       </div>
     </div>`;
 
-  // 各場次達成 grouped bar
+  // 各場次達成 — achievement % label plugin
+  const achLabelPlugin = {
+    id: 'achLabel',
+    afterDatasetsDraw(chart) {
+      const ctx2 = chart.ctx;
+      const meta = chart.getDatasetMeta(1); // 實績 dataset
+      meta.data.forEach((bar, i) => {
+        const sh = shows[i];
+        if(sh.actual > 0 && sh.target > 0) {
+          const ach = sh.actual / sh.target;
+          const text = (ach * 100).toFixed(1) + '%';
+          ctx2.save();
+          ctx2.fillStyle = ach >= 1 ? '#16a34a' : '#ca8a04';
+          ctx2.font = 'bold 12px Inter, sans-serif';
+          ctx2.textAlign = 'center';
+          ctx2.fillText(text, bar.x, bar.y - 6);
+          ctx2.restore();
+        }
+      });
+    }
+  };
+
   const showCtx = document.getElementById('merch-show-chart').getContext('2d');
   charts['merch-show'] = new Chart(showCtx, {
     type: 'bar',
+    plugins: [achLabelPlugin],
     data: {
       labels: shows.map(s => s.shortLabel),
       datasets: [
@@ -2585,6 +2604,7 @@ function renderMerch() {
     },
     options: {
       responsive: true,
+      layout: { padding: { top: 20 } },
       plugins: {
         legend: { position: 'top' },
         tooltip: {
@@ -2611,26 +2631,6 @@ function renderMerch() {
   });
 
   renderMerchProductChart();
-
-  // 繪本 vs 周邊商品 donut
-  const bookRev = products.filter(p => p.category === '故事繪本').reduce((s, p) => s + p.showRevs.reduce((a, r) => a + r, 0), 0);
-  const merchRev = products.filter(p => p.category === '周邊商品').reduce((s, p) => s + p.showRevs.reduce((a, r) => a + r, 0), 0);
-  const totalRev = bookRev + merchRev;
-  const donutCtx = document.getElementById('merch-category-donut').getContext('2d');
-  charts['merch-donut'] = new Chart(donutCtx, {
-    type: 'doughnut',
-    data: {
-      labels: ['故事繪本', '周邊商品'],
-      datasets: [{ data: [bookRev, merchRev], backgroundColor: ['#3b82f6', '#f59e0b'], borderWidth: 2 }]
-    },
-    options: {
-      responsive: true,
-      plugins: {
-        legend: { position: 'right' },
-        tooltip: { callbacks: { label: ctx => `${ctx.label}: NT$${fmtNum(ctx.raw)} (${totalRev>0?(ctx.raw/totalRev*100).toFixed(1)+'%':'—'})` } }
-      }
-    }
-  });
 }
 
 function switchMerchView(view) {
@@ -2651,29 +2651,34 @@ function renderMerchProductChart() {
   const shows = d.shows;
   const products = d.products;
   const ctx = document.getElementById('merch-product-chart').getContext('2d');
+  const activatedShows = shows.filter(s => s.actual > 0);
 
   if(currentMerchView === 'byShow') {
+    // 商品×場次: Y=products, for each product show bars per completed show
     charts['merch-product'] = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: shows.map(s => s.shortLabel),
-        datasets: products.map((p, i) => ({
-          label: p.name,
-          data: p.showRevs,
-          backgroundColor: MERCH_PRODUCT_COLORS[i % MERCH_PRODUCT_COLORS.length],
-          borderColor: '#fff',
-          borderWidth: 0.5
-        }))
+        labels: products.map(p => p.name),
+        datasets: activatedShows.length > 0
+          ? shows.map((sh, si) => ({
+              label: sh.shortLabel,
+              data: sh.actual > 0 ? products.map(p => p.showRevs[si]) : products.map(() => 0),
+              backgroundColor: MERCH_SHOW_COLORS[si % MERCH_SHOW_COLORS.length],
+              borderWidth: 0,
+              skipNull: true
+            })).filter((_, si) => shows[si].actual > 0)
+          : [{ label: '（尚無資料）', data: products.map(() => 0), backgroundColor: '#e2e8f0' }]
       },
       options: {
+        indexAxis: 'y',
         responsive: true,
         plugins: {
-          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 6 } },
+          legend: { position: 'top', labels: { font: { size: 12 }, boxWidth: 14 } },
           tooltip: { callbacks: { label: ctx => ctx.raw > 0 ? `${ctx.dataset.label}: NT$${fmtNum(ctx.raw)}` : null, filter: item => item.raw > 0 } }
         },
         scales: {
-          x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => 'NT$' + (v >= 10000 ? Math.round(v/10000)+'萬' : fmtNum(v)) } }
+          x: { ticks: { callback: v => 'NT$' + (v >= 10000 ? Math.round(v/10000)+'萬' : fmtNum(v)) } },
+          y: { grid: { display: false } }
         }
       }
     });
