@@ -650,6 +650,7 @@ canvas { max-width: 100%; }
     <button class="tab-btn" onclick="switchTab('venue')" data-zh="🏛 場地比較" data-ja="🏛 会場比較">🏛 場地比較</button>
     <button class="tab-btn" onclick="switchTab('ticket')" data-zh="🎟 票種結構" data-ja="🎟 券種構成">🎟 票種結構</button>
     <button class="tab-btn" onclick="switchTab('show')" data-zh="📋 場次明細" data-ja="📋 公演明細">📋 場次明細</button>
+    <button class="tab-btn" onclick="switchTab('merch')" data-zh="🛍 商售業績" data-ja="🛍 物販業績">🛍 商售業績</button>
   </div>
 
   <!-- ===== TAB: OVERVIEW ===== -->
@@ -1384,6 +1385,33 @@ canvas { max-width: 100%; }
     </div>
   </div>
 
+  <!-- ===== TAB: MERCH ===== -->
+  <div id="tab-merch" class="tab-panel">
+    <div class="section">
+      <h2 class="card-title">2026年夏季 現場商售業績</h2>
+      <div id="merch-kpi"></div>
+      <div class="card">
+        <div class="card-title">各場次商售達成</div>
+        <div class="chart-wrap"><canvas id="merch-show-chart" height="100"></canvas></div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+          <div class="card-title" style="margin:0;">商品銷售分析</div>
+          <div id="merch-view-btns" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <button onclick="switchMerchView('byShow')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以場次</button>
+            <button onclick="switchMerchView('byName')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以商品名稱</button>
+            <button onclick="switchMerchView('byRevenue')" style="font-size:13px;padding:5px 14px;border-radius:20px;border:1.5px solid #cbd5e1;background:#f1f5f9;color:#0c4a6e;cursor:pointer;font-weight:500;">以金額高低</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="merch-product-chart" height="400"></canvas></div>
+      </div>
+      <div class="card" style="max-width:520px;">
+        <div class="card-title">繪本 vs 周邊商品</div>
+        <div class="chart-wrap"><canvas id="merch-category-donut" height="220"></canvas></div>
+      </div>
+    </div>
+  </div>
+
 </div><!-- /dashboard-container -->
 </div><!-- /ds-root -->
 
@@ -1395,6 +1423,56 @@ const RAW_DATA = {"fy25s":{"label":"2025年夏季｜精靈的魔法夢境","labe
 
 // Mutable FY26S data (updated on import)
 let fy26sData = RAW_DATA.fy26s;
+
+// ============================================================
+// MERCH DATA — 2026夏季 現場商售
+// ============================================================
+const MERCH_DATA = {
+  dataDate: '2026-06-15',
+  totalTarget: 3675472,
+  shows: [
+    { label:'桃園\n6/13-14', shortLabel:'桃園', ticketQty:2859, target:468365, actual:618620, bookTarget:430, bookActual:445, buyers:658 },
+    { label:'親子劇場\n6/27-28', shortLabel:'親子(6月)', ticketQty:2787, target:569050, actual:0, bookTarget:560, bookActual:0, buyers:0 },
+    { label:'衛武營\n7/4-5', shortLabel:'衛武營', ticketQty:2449, target:794843, actual:0, bookTarget:630, bookActual:0, buyers:0 },
+    { label:'台南文化中心\n7/11', shortLabel:'台南', ticketQty:994, target:300802, actual:0, bookTarget:250, bookActual:0, buyers:0 },
+    { label:'新竹縣政府\n8/1-2', shortLabel:'新竹', ticketQty:2069, target:407225, actual:0, bookTarget:400, bookActual:0, buyers:0 },
+    { label:'臺中中山堂\n8/8', shortLabel:'臺中', ticketQty:1977, target:308807, actual:0, bookTarget:300, bookActual:0, buyers:0 },
+    { label:'親子劇場\n8/22-23', shortLabel:'親子(8月)', ticketQty:1861, target:542573, actual:0, bookTarget:550, bookActual:0, buyers:0 },
+    { label:'員林演藝廳\n8/29', shortLabel:'員林', ticketQty:1260, target:283807, actual:0, bookTarget:200, bookActual:0, buyers:0 }
+  ],
+  products: [
+    { name:'銀河怪盜的祕密', unitPrice:250, category:'故事繪本', showQtys:[445,0,0,0,0,0,0,0], showRevs:[111250,0,0,0,0,0,0,0], targetQty:430, targetRev:107500 },
+    { name:'神奇果汁店', unitPrice:899, category:'周邊商品', showQtys:[79,0,0,0,0,0,0,0], showRevs:[71021,0,0,0,0,0,0,0], targetQty:70, targetRev:62930 },
+    { name:'巧虎YUMMY商店', unitPrice:1199, category:'周邊商品', showQtys:[51,0,0,0,0,0,0,0], showRevs:[61149,0,0,0,0,0,0,0], targetQty:30, targetRev:35970 },
+    { name:'抱緊緊巧虎', unitPrice:899, category:'周邊商品', showQtys:[60,0,0,0,0,0,0,0], showRevs:[53940,0,0,0,0,0,0,0], targetQty:30, targetRev:26970 },
+    { name:'抱緊緊小花', unitPrice:899, category:'周邊商品', showQtys:[60,0,0,0,0,0,0,0], showRevs:[53940,0,0,0,0,0,0,0], targetQty:30, targetRev:26970 },
+    { name:'可愛好朋友玩偶組', unitPrice:1399, category:'周邊商品', showQtys:[34,0,0,0,0,0,0,0], showRevs:[47566,0,0,0,0,0,0,0], targetQty:25, targetRev:34975 },
+    { name:'巧虎歡樂軌道樂園', unitPrice:1099, category:'周邊商品', showQtys:[41,0,0,0,0,0,0,0], showRevs:[45059,0,0,0,0,0,0,0], targetQty:30, targetRev:32970 },
+    { name:'琪琪抱抱', unitPrice:899, category:'周邊商品', showQtys:[36,0,0,0,0,0,0,0], showRevs:[32364,0,0,0,0,0,0,0], targetQty:30, targetRev:26970 },
+    { name:'黏土甜甜圈商店', unitPrice:750, category:'周邊商品', showQtys:[36,0,0,0,0,0,0,0], showRevs:[27000,0,0,0,0,0,0,0], targetQty:0, targetRev:0 },
+    { name:'小花髮帶', unitPrice:399, category:'周邊商品', showQtys:[44,0,0,0,0,0,0,0], showRevs:[17556,0,0,0,0,0,0,0], targetQty:35, targetRev:13965 },
+    { name:'巧虎髮帶', unitPrice:399, category:'周邊商品', showQtys:[41,0,0,0,0,0,0,0], showRevs:[16359,0,0,0,0,0,0,0], targetQty:25, targetRev:9975 },
+    { name:'方塊活字印刷遊戲組', unitPrice:1099, category:'周邊商品', showQtys:[13,0,0,0,0,0,0,0], showRevs:[14287,0,0,0,0,0,0,0], targetQty:15, targetRev:16485 },
+    { name:'魔法音樂響叮噹', unitPrice:250, category:'周邊商品', showQtys:[56,0,0,0,0,0,0,0], showRevs:[14000,0,0,0,0,0,0,0], targetQty:15, targetRev:3750 },
+    { name:'妙妙髮帶', unitPrice:399, category:'周邊商品', showQtys:[29,0,0,0,0,0,0,0], showRevs:[11571,0,0,0,0,0,0,0], targetQty:10, targetRev:3990 },
+    { name:'聲光廚房遊戲組', unitPrice:1599, category:'周邊商品', showQtys:[7,0,0,0,0,0,0,0], showRevs:[11193,0,0,0,0,0,0,0], targetQty:10, targetRev:15990 },
+    { name:'巧虎手偶互動套組', unitPrice:399, category:'周邊商品', showQtys:[23,0,0,0,0,0,0,0], showRevs:[9177,0,0,0,0,0,0,0], targetQty:15, targetRev:5985 },
+    { name:'妙妙抱抱', unitPrice:899, category:'周邊商品', showQtys:[10,0,0,0,0,0,0,0], showRevs:[8990,0,0,0,0,0,0,0], targetQty:10, targetRev:8990 },
+    { name:'桃樂比髮帶', unitPrice:399, category:'周邊商品', showQtys:[21,0,0,0,0,0,0,0], showRevs:[8379,0,0,0,0,0,0,0], targetQty:8, targetRev:3192 },
+    { name:'二合一音樂玩具', unitPrice:850, category:'周邊商品', showQtys:[4,0,0,0,0,0,0,0], showRevs:[3400,0,0,0,0,0,0,0], targetQty:8, targetRev:6800 },
+    { name:'白色提袋(大)', unitPrice:5, category:'周邊商品', showQtys:[70,0,0,0,0,0,0,0], showRevs:[350,0,0,0,0,0,0,0], targetQty:0, targetRev:0 },
+    { name:'白色提袋(小)', unitPrice:3, category:'周邊商品', showQtys:[23,0,0,0,0,0,0,0], showRevs:[69,0,0,0,0,0,0,0], targetQty:0, targetRev:0 },
+    { name:'穿衣練習組', unitPrice:1999, category:'周邊商品', showQtys:[0,0,0,0,0,0,0,0], showRevs:[0,0,0,0,0,0,0,0], targetQty:12, targetRev:23988 }
+  ]
+};
+
+const MERCH_PRODUCT_COLORS = [
+  '#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6',
+  '#06b6d4','#f97316','#84cc16','#ec4899','#6366f1',
+  '#14b8a6','#fb923c','#a3e635','#f43f5e','#818cf8',
+  '#2dd4bf','#fbbf24','#4ade80','#e879f9','#38bdf8',
+  '#94a3b8','#d97706'
+];
 
 const SEASON_COLORS = {
   fy25s:  { bg:'rgba(251,191,36,0.7)',  border:'#f59e0b', label25:'2025年夏季', labelJa:'2025年夏' },
@@ -1442,7 +1520,7 @@ function switchTab(name) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   const btns = document.querySelectorAll('.tab-btn');
-  const tabs = ['overview','target','velocity','venue','ticket','show'];
+  const tabs = ['overview','target','velocity','venue','ticket','show','merch'];
   btns[tabs.indexOf(name)].classList.add('active');
   setTimeout(() => {
     if(name==='overview') renderOverview();
@@ -1451,6 +1529,7 @@ function switchTab(name) {
     if(name==='venue') renderVenue();
     if(name==='ticket') renderTicketMix();
     if(name==='show') renderShowDetail('fy26s');
+    if(name==='merch') renderMerch();
   }, 50);
 }
 
@@ -2403,7 +2482,7 @@ function exportHTML() {
 // RENDER ALL (re-render current active tab)
 // ============================================================
 function renderAll() {
-  const tabs = ['overview','target','velocity','venue','ticket','show'];
+  const tabs = ['overview','target','velocity','venue','ticket','show','merch'];
   const active = tabs.find(n => document.getElementById('tab-'+n) && document.getElementById('tab-'+n).classList.contains('active')) || 'target';
   switchTab(active);
   updateDataDateDisplay();
@@ -2416,6 +2495,220 @@ function updateDataDateDisplay() {
   const el = document.getElementById('dataDateDisplay');
   if (el && fy26sData && fy26sData.dataDate) {
     el.textContent = fy26sData.dataDate;
+  }
+}
+
+// ============================================================
+// MERCH
+// ============================================================
+let currentMerchView = 'byShow';
+
+function renderMerch() {
+  if(charts['merch-show']) { charts['merch-show'].destroy(); delete charts['merch-show']; }
+  if(charts['merch-product']) { charts['merch-product'].destroy(); delete charts['merch-product']; }
+  if(charts['merch-donut']) { charts['merch-donut'].destroy(); delete charts['merch-donut']; }
+
+  const d = MERCH_DATA;
+  const shows = d.shows;
+  const products = d.products;
+
+  const completedShows = shows.filter(s => s.actual > 0);
+  const totalActual = shows.reduce((s, sh) => s + sh.actual, 0);
+  const seasonTarget = d.totalTarget;
+  const seasonAch = seasonTarget > 0 ? totalActual / seasonTarget : 0;
+  const totalBuyers = shows.reduce((s, sh) => s + sh.buyers, 0);
+  const completedTickets = completedShows.reduce((s, sh) => s + sh.ticketQty, 0);
+  const purchaseRate = completedTickets > 0 ? totalBuyers / completedTickets : 0;
+  const completedActual = completedShows.reduce((s, sh) => s + sh.actual, 0);
+  const completedTarget = completedShows.reduce((s, sh) => s + sh.target, 0);
+  const completedAch = completedTarget > 0 ? completedActual / completedTarget : 0;
+
+  const prodTotals = products.map((p, i) => ({ name: p.name, totalRev: p.showRevs.reduce((s, r) => s + r, 0), i }));
+  prodTotals.sort((a, b) => b.totalRev - a.totalRev);
+  const topProduct = prodTotals[0];
+
+  const kpiEl = document.getElementById('merch-kpi');
+  kpiEl.innerHTML = `
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px;">
+      <div class="kpi-card">
+        <div class="kpi-label">累計商售收入
+          <span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;">${completedShows.length}場已演 / 共${shows.length}場</span>
+        </div>
+        <div class="kpi-value" style="font-size:26px;">NT$${fmtNum(totalActual)}</div>
+        <div class="kpi-delta">全季目標 NT$${Math.round(seasonTarget/10000)}萬</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">已演場次達成率
+          <span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;">實績 / 目標（已演場次）</span>
+        </div>
+        <div class="kpi-value" style="font-size:26px;color:${completedAch>=1?'#16a34a':'#ca8a04'}">${completedTarget>0?(completedAch*100).toFixed(1)+'%':'—'}</div>
+        <div class="kpi-delta">全季進度 ${(seasonAch*100).toFixed(1)}%</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">購買率
+          <span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;">購買人數 / 入場人數</span>
+        </div>
+        <div class="kpi-value" style="font-size:26px;">${completedTickets>0?(purchaseRate*100).toFixed(1)+'%':'—'}</div>
+        <div class="kpi-delta">購買 ${fmtNum(totalBuyers)} 人</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">暢銷商品 #1
+          <span style="display:block;font-size:11px;color:#94a3b8;margin-top:2px;">累計營業額最高</span>
+        </div>
+        <div class="kpi-value" style="font-size:17px;line-height:1.35;">${topProduct&&topProduct.totalRev>0?topProduct.name:'—'}</div>
+        <div class="kpi-delta">${topProduct&&topProduct.totalRev>0?'NT$'+fmtNum(topProduct.totalRev):''}</div>
+      </div>
+    </div>`;
+
+  // 各場次達成 grouped bar
+  const showCtx = document.getElementById('merch-show-chart').getContext('2d');
+  charts['merch-show'] = new Chart(showCtx, {
+    type: 'bar',
+    data: {
+      labels: shows.map(s => s.shortLabel),
+      datasets: [
+        {
+          label: '目標',
+          data: shows.map(s => s.target),
+          backgroundColor: 'rgba(203,213,225,0.6)',
+          borderColor: '#94a3b8',
+          borderWidth: 1
+        },
+        {
+          label: '實績',
+          data: shows.map(s => s.actual),
+          backgroundColor: shows.map(s => s.actual > 0 ? (s.actual >= s.target ? 'rgba(34,197,94,0.8)' : 'rgba(234,179,8,0.8)') : 'rgba(0,0,0,0)'),
+          borderColor: shows.map(s => s.actual > 0 ? (s.actual >= s.target ? '#16a34a' : '#ca8a04') : 'rgba(0,0,0,0)'),
+          borderWidth: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: ctx => ctx.raw > 0 ? `${ctx.dataset.label}: NT$${fmtNum(ctx.raw)}` : null,
+            filter: item => item.raw > 0
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { ticks: { callback: v => 'NT$' + (v >= 10000 ? Math.round(v/10000)+'萬' : fmtNum(v)) } }
+      }
+    }
+  });
+
+  // Update toggle button visual state
+  document.querySelectorAll('#merch-view-btns button').forEach((btn, i) => {
+    const views = ['byShow','byName','byRevenue'];
+    const isActive = views[i] === currentMerchView;
+    btn.style.background = isActive ? '#0284c7' : '#f1f5f9';
+    btn.style.color = isActive ? '#fff' : '#0c4a6e';
+    btn.style.borderColor = isActive ? '#0284c7' : '#cbd5e1';
+  });
+
+  renderMerchProductChart();
+
+  // 繪本 vs 周邊商品 donut
+  const bookRev = products.filter(p => p.category === '故事繪本').reduce((s, p) => s + p.showRevs.reduce((a, r) => a + r, 0), 0);
+  const merchRev = products.filter(p => p.category === '周邊商品').reduce((s, p) => s + p.showRevs.reduce((a, r) => a + r, 0), 0);
+  const totalRev = bookRev + merchRev;
+  const donutCtx = document.getElementById('merch-category-donut').getContext('2d');
+  charts['merch-donut'] = new Chart(donutCtx, {
+    type: 'doughnut',
+    data: {
+      labels: ['故事繪本', '周邊商品'],
+      datasets: [{ data: [bookRev, merchRev], backgroundColor: ['#3b82f6', '#f59e0b'], borderWidth: 2 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'right' },
+        tooltip: { callbacks: { label: ctx => `${ctx.label}: NT$${fmtNum(ctx.raw)} (${totalRev>0?(ctx.raw/totalRev*100).toFixed(1)+'%':'—'})` } }
+      }
+    }
+  });
+}
+
+function switchMerchView(view) {
+  currentMerchView = view;
+  document.querySelectorAll('#merch-view-btns button').forEach((btn, i) => {
+    const views = ['byShow','byName','byRevenue'];
+    const isActive = views[i] === view;
+    btn.style.background = isActive ? '#0284c7' : '#f1f5f9';
+    btn.style.color = isActive ? '#fff' : '#0c4a6e';
+    btn.style.borderColor = isActive ? '#0284c7' : '#cbd5e1';
+  });
+  if(charts['merch-product']) { charts['merch-product'].destroy(); delete charts['merch-product']; }
+  renderMerchProductChart();
+}
+
+function renderMerchProductChart() {
+  const d = MERCH_DATA;
+  const shows = d.shows;
+  const products = d.products;
+  const ctx = document.getElementById('merch-product-chart').getContext('2d');
+
+  if(currentMerchView === 'byShow') {
+    charts['merch-product'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: shows.map(s => s.shortLabel),
+        datasets: products.map((p, i) => ({
+          label: p.name,
+          data: p.showRevs,
+          backgroundColor: MERCH_PRODUCT_COLORS[i % MERCH_PRODUCT_COLORS.length],
+          borderColor: '#fff',
+          borderWidth: 0.5
+        }))
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 6 } },
+          tooltip: { callbacks: { label: ctx => ctx.raw > 0 ? `${ctx.dataset.label}: NT$${fmtNum(ctx.raw)}` : null, filter: item => item.raw > 0 } }
+        },
+        scales: {
+          x: { stacked: true, grid: { display: false } },
+          y: { stacked: true, ticks: { callback: v => 'NT$' + (v >= 10000 ? Math.round(v/10000)+'萬' : fmtNum(v)) } }
+        }
+      }
+    });
+  } else {
+    let prods = products.map((p, i) => ({
+      name: p.name,
+      totalRev: p.showRevs.reduce((s, r) => s + r, 0),
+      color: MERCH_PRODUCT_COLORS[i % MERCH_PRODUCT_COLORS.length]
+    }));
+    if(currentMerchView === 'byRevenue') prods.sort((a, b) => b.totalRev - a.totalRev);
+
+    charts['merch-product'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: prods.map(p => p.name),
+        datasets: [{
+          label: '累計營業額',
+          data: prods.map(p => p.totalRev),
+          backgroundColor: prods.map(p => p.color),
+          borderWidth: 0
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => `NT$${fmtNum(ctx.raw)}` } }
+        },
+        scales: {
+          x: { ticks: { callback: v => 'NT$' + (v >= 10000 ? Math.round(v/10000)+'萬' : fmtNum(v)) } },
+          y: { grid: { display: false } }
+        }
+      }
+    });
   }
 }
 
