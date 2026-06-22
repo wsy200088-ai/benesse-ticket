@@ -2621,8 +2621,8 @@ function renderMerch() {
         }
       },
       scales: {
-        x: { grid: { display: false }, ticks: { font: { size: 10 }, callback: v => 'NT$'+(v>=10000?Math.round(v/10000)+'萬':fmtNum(v)) } },
-        y: { ticks: { font: { size: 11 } } }
+        x: { grid: { display: false }, ticks: { font: { size: 10 } } },
+        y: { ticks: { font: { size: 11 }, callback: v => 'NT$'+(v>=10000?Math.round(v/10000)+'萬':fmtNum(v)) } }
       }
     }
   });
