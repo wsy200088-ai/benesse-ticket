@@ -1687,6 +1687,30 @@ function renderTarget() {
     showByMonth[k].revenue += s.revenue;
   });
 
+  // Build date range per venue+month from showDetail for chart labels
+  const dateRangeMap = {};
+  (data.showDetail||[]).forEach(s => {
+    if(!s.showTime) return;
+    const mo = s.showTime.includes('/06/') ? '6月' : s.showTime.includes('/07/') ? '7月'
+             : s.showTime.includes('/08/') ? '8月' : s.showTime.includes('/09/') ? '9月'
+             : s.showTime.includes('/10/') ? '10月' : '其他';
+    const k = s.venue + '|' + mo;
+    const mm = parseInt(s.showTime.substring(5,7));
+    const dd = parseInt(s.showTime.substring(8,10));
+    if(!dateRangeMap[k]) { dateRangeMap[k] = {minM:mm,minD:dd,maxM:mm,maxD:dd}; }
+    else {
+      const cur=mm*100+dd, curMin=dateRangeMap[k].minM*100+dateRangeMap[k].minD, curMax=dateRangeMap[k].maxM*100+dateRangeMap[k].maxD;
+      if(cur<curMin){dateRangeMap[k].minM=mm;dateRangeMap[k].minD=dd;}
+      if(cur>curMax){dateRangeMap[k].maxM=mm;dateRangeMap[k].maxD=dd;}
+    }
+  });
+  function getDatePrefix(venue, month) {
+    const dr = dateRangeMap[venue+'|'+month];
+    if(!dr) return '';
+    if(dr.minM===dr.maxM && dr.minD===dr.maxD) return `${dr.minM}/${dr.minD} `;
+    return `${dr.minM}/${dr.minD}-${dr.maxM}/${dr.maxD} `;
+  }
+
   const targets = data.targets || [];
   const rows = targets.map(tgt => {
     // 臺北親子劇場同時有6月和8月目標，用月份區分 key
@@ -1764,8 +1788,9 @@ function renderTarget() {
     type:'bar',
     data:{
       labels: chartRows.map(r => {
-        const name = r.venue.length>14 ? r.venue.substring(0,14)+'…' : r.venue;
-        return r.isSpecial ? name+' ★' : name;
+        const datePrefix = getDatePrefix(r.venue, r.month);
+        const name = r.venue.length>12 ? r.venue.substring(0,12)+'…' : r.venue;
+        return datePrefix + (r.isSpecial ? name+' ★' : name);
       }),
       datasets:[
         {
@@ -1790,7 +1815,7 @@ function renderTarget() {
         legend:{ position:'top' },
         tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } }
       },
-      scales:{ x:{ ticks:{ callback:v=>'$'+Math.round(v/10000)+'萬' } } }
+      scales:{ x:{ ticks:{ stepSize:1000000, callback:v=>v===0?'$0':'$'+Math.round(v/1000000)+'百萬' } } }
     },
     plugins:[{
       id: 'diffLabel',
