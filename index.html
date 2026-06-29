@@ -1866,8 +1866,8 @@ function renderTarget() {
         <div class="kpi-value" style="font-size:28px; color:${achColor};">${(totalAch*100).toFixed(1)}%</div>
       </div>
       <div style="flex:1; min-width:120px;">
-        <div class="kpi-label">${t('缺口金額','差額')}</div>
-        <div class="kpi-value" style="font-size:24px; color:#dc2626;">NT$${Math.round((totalTargetRev-totalActualRev)/10000).toLocaleString()}萬</div>
+        <div class="kpi-label">${totalAch>=1 ? t('超出金額','超過金額') : t('缺口金額','差額')}</div>
+        <div class="kpi-value" style="font-size:24px; color:${totalAch>=1?'#16a34a':'#dc2626'};">NT$${totalAch>=1?'＋':'－'}${Math.abs(Math.round((totalTargetRev-totalActualRev)/10000)).toLocaleString()}萬</div>
       </div>
     </div>
   `;
@@ -2659,7 +2659,7 @@ function renderMerch() {
         <div class="kpi-label" style="font-size:11px;">累計商售收入
           <span style="display:block;font-size:10px;color:#94a3b8;">${completedShows.length}場已演 / 共${shows.length}場</span>
         </div>
-        <div class="kpi-value" style="font-size:22px;margin:4px 0;">NT$${fmtNum(totalActual)}</div>
+        <div class="kpi-value" style="font-size:22px;margin:4px 0;">NT$${(totalActual/10000).toFixed(1)}萬</div>
         <div class="kpi-delta" style="font-size:11px;">全季目標 NT$${Math.round(seasonTarget/10000)}萬</div>
       </div>
       <div class="kpi-card" style="padding:12px 14px;">
