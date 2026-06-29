@@ -588,8 +588,8 @@ canvas { max-width: 100%; }
   .memo-header { padding: 10px 14px; }
   .memo-body { padding: 0 14px 12px; }
 
-  /* Lang bar: smaller */
-  .lang-bar { padding: 3px 8px; right: 10px; top: 8px; }
+  /* Lang bar: move to bottom-right FAB so it never overlaps content */
+  .lang-bar { top: auto; bottom: 16px; right: 14px; padding: 4px 10px; }
   .lang-btn { font-size: 12px; padding: 3px 6px; }
 
   /* Ticket image link in header: make smaller */
@@ -625,8 +625,10 @@ canvas { max-width: 100%; }
   .kpi-grid { gap: 8px; }
   .ds-root .kpi-value { font-size: var(--fs-kpi-value); }
 
-  /* Tables: ensure scroll works properly */
+  /* Tables: ensure scroll works properly & prevent text wrapping */
   .table-wrap { -webkit-overflow-scrolling: touch; }
+  .ds-root .data-table th,
+  .ds-root .data-table td { white-space: nowrap; }
 
   /* btn-group: stack on mobile */
   .btn-group { gap: 6px; }
@@ -936,7 +938,7 @@ canvas { max-width: 100%; }
   </div>
       <div class="card">
         <div class="card-title" data-zh="各場地達成率" data-ja="会場別達成率">各場地達成率</div>
-        <div class="chart-wrap"><canvas id="targetChart" height="330" style="box-sizing: border-box; display: block; height: 330px; width: 1099px;" width="1099"></canvas></div>
+        <div class="chart-wrap"><div id="targetChartWrap" style="position:relative;height:330px;"><canvas id="targetChart"></canvas></div></div>
       </div>
       <div class="card mt-16">
         <div class="card-title" data-zh="場地達成明細" data-ja="会場別達成明細">場地達成明細</div>
@@ -1886,6 +1888,10 @@ function renderTarget() {
     });
   }
 
+  // Set chart height dynamically based on row count (ensures readability on mobile)
+  const _tcWrap = document.getElementById('targetChartWrap');
+  if(_tcWrap) _tcWrap.style.height = Math.max(330, chartRows.length * 42 + 40) + 'px';
+
   destroyChart('targetChart');
   charts['targetChart'] = new Chart(document.getElementById('targetChart'), {
     type:'bar',
@@ -1914,6 +1920,8 @@ function renderTarget() {
     },
     options:{
       indexAxis:'y',
+      responsive: true,
+      maintainAspectRatio: false,
       plugins:{
         legend:{ position:'top' },
         tooltip:{ callbacks:{ label: ctx => ctx.dataset.label+': NT$'+Math.round(ctx.parsed.x/10000)+'萬' } }
