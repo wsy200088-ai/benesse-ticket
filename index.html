@@ -1580,6 +1580,28 @@ const TICKET_CAT_COLORS = ['#f59e0b','#8b5cf6','#3b82f6','#10b981','#ef4444','#e
 // LANG
 // ============================================================
 let currentLang = 'zh';
+function toggleMemo() {
+  const body = document.getElementById('memoBody');
+  const icon = document.getElementById('memoIcon');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  icon.classList.toggle('open', !isOpen);
+}
+
+function saveMemo() {
+  const el = document.getElementById('memoText');
+  const hint = document.getElementById('memoSavedHint');
+  const preview = document.getElementById('memoPreview');
+  if (!el) return;
+  localStorage.setItem('benesse_memo', el.value);
+  if (preview) preview.textContent = el.value ? el.value.substring(0, 30) + (el.value.length > 30 ? '…' : '') : '';
+  if (hint) {
+    hint.classList.add('show');
+    clearTimeout(hint._t);
+    hint._t = setTimeout(() => hint.classList.remove('show'), 1800);
+  }
+}
+
 function setLang(lang) {
   currentLang = lang;
   document.getElementById('btn-zh').className = 'lang-btn' + (lang==='zh'?' active':'');
@@ -2621,6 +2643,16 @@ function renderAll() {
 }
 
 // ============================================================
+// MEMO: restore from localStorage
+(function() {
+  const saved = localStorage.getItem('benesse_memo');
+  const el = document.getElementById('memoText');
+  if (el && saved) {
+    el.value = saved;
+    saveMemo();
+  }
+})();
+
 // DATA DATE DISPLAY (永遠顯示 fy26sData.dataDate，隨資料更新自動同步)
 // ============================================================
 function updateDataDateDisplay() {
